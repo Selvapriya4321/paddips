@@ -1,89 +1,49 @@
 import { useState } from "react";
 
-// =====================================================
-// API URL
-// =====================================================
-
-const API_URL =
-  import.meta.env.VITE_API_URL ||  "https://paddips-bot.onrender.com";
-
-// =====================================================
-// CHAT COMPONENT
-// =====================================================
+const API_URL = "http://localhost:5000";
 
 function Chat() {
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  // ===================================================
-  // SEND MESSAGE
-  // ===================================================
-
   const sendMessage = async () => {
-    if (!message.trim() || loading) return;
-
     const userMessage = message.trim();
 
-    // Add user message immediately
+    if (!userMessage || loading) return;
+
     setMessages((prev) => [
       ...prev,
-      {
-        type: "user",
-        text: userMessage,
-      },
+      { type: "user", text: userMessage },
     ]);
 
-    // Clear input
     setMessage("");
-
-    // Show loading
     setLoading(true);
 
     try {
-      // ===============================================
-      // CALL RENDER BACKEND
-      // ===============================================
-
       const response = await fetch(`${API_URL}/api/chat`, {
         method: "POST",
-
         headers: {
           "Content-Type": "application/json",
         },
-
         body: JSON.stringify({
           message: userMessage,
         }),
       });
 
-      // ===============================================
-      // READ RESPONSE
-      // ===============================================
-
       const data = await response.json();
-
-      // ===============================================
-      // CHECK BACKEND ERROR
-      // ===============================================
 
       if (!response.ok) {
         throw new Error(
-          data.error || "Chat request failed"
+          data.error || `Server error: ${response.status}`
         );
       }
-
-      // ===============================================
-      // ADD AI RESPONSE
-      // ===============================================
 
       setMessages((prev) => [
         ...prev,
         {
           type: "ai",
-          text:
-            data.reply ||
-            "Sorry, I could not generate a response.",
+          text: data.reply || "Sorry, I could not generate a response.",
         },
       ]);
     } catch (error) {
@@ -93,8 +53,7 @@ function Chat() {
         ...prev,
         {
           type: "ai",
-          text:
-            "❌ Backend connection failed. Please try again.",
+          text: `❌ ${error.message || "Unable to connect to the backend."}`,
         },
       ]);
     } finally {
@@ -102,50 +61,42 @@ function Chat() {
     }
   };
 
-  // ===================================================
-  // ENTER KEY
-  // ===================================================
-
   const handleKeyDown = (event) => {
-    if (event.key === "Enter") {
+    if (event.key === "Enter" && !event.shiftKey) {
       event.preventDefault();
       sendMessage();
     }
   };
 
-  // ===================================================
-  // UI
-  // ===================================================
-
   return (
     <div
       style={{
-        padding: "40px",
         maxWidth: "800px",
-        margin: "auto",
+        margin: "40px auto",
+        padding: "24px",
+        fontFamily: "Arial, sans-serif",
+        color: "#222",
       }}
     >
-      {/* TITLE */}
       <h1>🤖 AI Study Assistant</h1>
-
       <p>Ask me anything about your studies.</p>
 
-      {/* CHAT AREA */}
       <div
         style={{
-          minHeight: "400px",
+          minHeight: "350px",
+          maxHeight: "500px",
+          overflowY: "auto",
           padding: "20px",
           marginTop: "20px",
           background: "#f5f5f5",
           borderRadius: "15px",
-          overflowY: "auto",
         }}
       >
         {messages.length === 0 && (
           <div
             style={{
               textAlign: "center",
-              padding: "100px 20px",
+              padding: "100px 10px",
               color: "#777",
             }}
           >
@@ -159,29 +110,23 @@ function Chat() {
             style={{
               marginBottom: "15px",
               padding: "12px",
-              background:
-                msg.type === "user"
-                  ? "#ddd5ff"
-                  : "white",
+              background: msg.type === "user" ? "#ddd5ff" : "#fff",
               borderRadius: "10px",
               lineHeight: "1.6",
-              wordBreak: "break-word",
+              whiteSpace: "pre-wrap",
+              overflowWrap: "anywhere",
             }}
           >
-            <strong>
-              {msg.type === "user" ? "You" : "AI"}:
-            </strong>{" "}
+            <strong>{msg.type === "user" ? "You" : "AI"}:</strong>{" "}
             {msg.text}
           </div>
         ))}
 
-        {/* LOADING MESSAGE */}
         {loading && (
           <div
             style={{
-              marginBottom: "15px",
               padding: "12px",
-              background: "white",
+              background: "#fff",
               borderRadius: "10px",
               color: "#666",
             }}
@@ -191,7 +136,6 @@ function Chat() {
         )}
       </div>
 
-      {/* INPUT AREA */}
       <div
         style={{
           display: "flex",
@@ -200,37 +144,35 @@ function Chat() {
         }}
       >
         <input
+          type="text"
           value={message}
-          onChange={(e) => setMessage(e.target.value)}
+          onChange={(event) => setMessage(event.target.value)}
           onKeyDown={handleKeyDown}
           placeholder="Ask your study question..."
           disabled={loading}
           style={{
             flex: 1,
+            minWidth: 0,
             padding: "14px",
             borderRadius: "10px",
             border: "1px solid #ccc",
-            outline: "none",
+            fontSize: "16px",
           }}
         />
 
         <button
+          type="button"
           onClick={sendMessage}
           disabled={loading || !message.trim()}
           style={{
-            padding: "14px 25px",
+            padding: "14px 24px",
             border: "none",
             borderRadius: "10px",
             background: "#5b3cc4",
-            color: "white",
-            cursor:
-              loading || !message.trim()
-                ? "not-allowed"
-                : "pointer",
-            opacity:
-              loading || !message.trim()
-                ? 0.6
-                : 1,
+            color: "#fff",
+            fontSize: "16px",
+            cursor: loading || !message.trim() ? "not-allowed" : "pointer",
+            opacity: loading || !message.trim() ? 0.6 : 1,
           }}
         >
           {loading ? "Sending..." : "Send"}

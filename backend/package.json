@@ -1,21 +1,19 @@
 {
-  "name": "backend",
+  "name": "ai-learning-assistant-backend",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "AI Learning Assistant API",
+  "main": "server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node server.js",
+    "dev": "node server.js"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
   "type": "commonjs",
   "dependencies": {
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "multer": "^2.3.0",
-    "openai": "^7.10.0",
+    "openai": "^7.32.0",
     "pdf-parse": "^2.4.5"
   }
 }
