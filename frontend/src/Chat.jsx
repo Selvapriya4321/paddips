@@ -1,11 +1,21 @@
-import { useState } from "react";
+```jsx
+import { useState, useEffect, useRef } from "react";
 
-const API_URL = "http://localhost:5000";
+const API_URL = (
+  import.meta.env.VITE_API_URL || "http://localhost:5000"
+).replace(/\/+$/, "");
 
 function Chat() {
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
+  const chatEndRef = useRef(null);
+
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({
+      behavior: "smooth",
+    });
+  }, [messages, loading]);
 
   const sendMessage = async () => {
     const userMessage = message.trim();
@@ -39,21 +49,32 @@ function Chat() {
         );
       }
 
+      if (!data.reply) {
+        throw new Error("The backend returned an empty reply.");
+      }
+
       setMessages((prev) => [
         ...prev,
-        {
-          type: "ai",
-          text: data.reply || "Sorry, I could not generate a response.",
-        },
+        { type: "ai", text: data.reply },
       ]);
     } catch (error) {
       console.error("Chat Error:", error);
 
+      let errorMessage = error.message;
+
+      if (
+        error instanceof TypeError ||
+        error.name === "NetworkError"
+      ) {
+        errorMessage =
+          "Cannot connect to the backend. Check your server URL and internet connection.";
+      }
+
       setMessages((prev) => [
         ...prev,
         {
-          type: "ai",
-          text: `❌ ${error.message || "Unable to connect to the backend."}`,
+          type: "error",
+          text: `❌ ${errorMessage || "Unable to connect to the backend."}`,
         },
       ]);
     } finally {
@@ -69,117 +90,126 @@ function Chat() {
   };
 
   return (
-    <div
-      style={{
-        maxWidth: "800px",
-        margin: "40px auto",
-        padding: "24px",
-        fontFamily: "Arial, sans-serif",
-        color: "#222",
-      }}
-    >
-      <h1>🤖 AI Study Assistant</h1>
-      <p>Ask me anything about your studies.</p>
-
-      <div
-        style={{
-          minHeight: "350px",
-          maxHeight: "500px",
-          overflowY: "auto",
-          padding: "20px",
-          marginTop: "20px",
-          background: "#f5f5f5",
-          borderRadius: "15px",
-        }}
-      >
-        {messages.length === 0 && (
-          <div
-            style={{
-              textAlign: "center",
-              padding: "100px 10px",
-              color: "#777",
-            }}
-          >
-            👋 Ask me a question to get started!
+    <div className="chat-page">
+      <div className="chat-card">
+        <header className="chat-header">
+          <div className="chat-avatar">🤖</div>
+          <div>
+            <h1>PADDIPS BOT</h1>
+            <p>AI Learning Assistant</p>
           </div>
-        )}
+          <span className="online-status">● Ready</span>
+        </header>
 
-        {messages.map((msg, index) => (
-          <div
-            key={index}
-            style={{
-              marginBottom: "15px",
-              padding: "12px",
-              background: msg.type === "user" ? "#ddd5ff" : "#fff",
-              borderRadius: "10px",
-              lineHeight: "1.6",
-              whiteSpace: "pre-wrap",
-              overflowWrap: "anywhere",
-            }}
-          >
-            <strong>{msg.type === "user" ? "You" : "AI"}:</strong>{" "}
-            {msg.text}
-          </div>
-        ))}
+        <div className="chat-messages">
+          {messages.length === 0 && (
+            <div className="chat-welcome">
+              <div className="welcome-icon">✨</div>
+              <h2>Hello, Learner!</h2>
+              <p>
+                Ask me questions about programming, science,
+                mathematics, or your studies.
+              </p>
 
-        {loading && (
-          <div
-            style={{
-              padding: "12px",
-              background: "#fff",
-              borderRadius: "10px",
-              color: "#666",
-            }}
-          >
-            <strong>AI:</strong> Thinking... 🤔
-          </div>
-        )}
-      </div>
+              <div className="suggestion-list">
+                {[
+                  "Explain Python basics",
+                  "What is cloud computing?",
+                  "Give me a Java program",
+                ].map((question) => (
+                  <button
+                    key={question}
+                    type="button"
+                    onClick={() => setMessage(question)}
+                  >
+                    {question} →
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
-      <div
-        style={{
-          display: "flex",
-          gap: "10px",
-          marginTop: "20px",
-        }}
-      >
-        <input
-          type="text"
-          value={message}
-          onChange={(event) => setMessage(event.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder="Ask your study question..."
-          disabled={loading}
-          style={{
-            flex: 1,
-            minWidth: 0,
-            padding: "14px",
-            borderRadius: "10px",
-            border: "1px solid #ccc",
-            fontSize: "16px",
-          }}
-        />
+          {messages.map((msg, index) => (
+            <div
+              key={`${index}-${msg.type}`}
+              className={`message-row ${msg.type}`}
+            >
+              <div className="message-avatar">
+                {msg.type === "user"
+                  ? "👤"
+                  : msg.type === "error"
+                  ? "⚠️"
+                  : "🤖"}
+              </div>
 
-        <button
-          type="button"
-          onClick={sendMessage}
-          disabled={loading || !message.trim()}
-          style={{
-            padding: "14px 24px",
-            border: "none",
-            borderRadius: "10px",
-            background: "#5b3cc4",
-            color: "#fff",
-            fontSize: "16px",
-            cursor: loading || !message.trim() ? "not-allowed" : "pointer",
-            opacity: loading || !message.trim() ? 0.6 : 1,
+              <div className="message-content">
+                <span className="message-sender">
+                  {msg.type === "user"
+                    ? "You"
+                    : msg.type === "error"
+                    ? "Connection Error"
+                    : "PADDIPS BOT"}
+                </span>
+
+                <div className="message-bubble">
+                  {msg.text}
+                </div>
+              </div>
+            </div>
+          ))}
+
+          {loading && (
+            <div className="message-row ai">
+              <div className="message-avatar">🤖</div>
+              <div className="message-content">
+                <span className="message-sender">
+                  PADDIPS BOT
+                </span>
+                <div className="message-bubble typing">
+                  Thinking
+                  <span>.</span>
+                  <span>.</span>
+                  <span>.</span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div ref={chatEndRef} />
+        </div>
+
+        <form
+          className="chat-input-area"
+          onSubmit={(event) => {
+            event.preventDefault();
+            sendMessage();
           }}
         >
-          {loading ? "Sending..." : "Send"}
-        </button>
+          <input
+            type="text"
+            value={message}
+            onChange={(event) => setMessage(event.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder="Ask anything about your studies..."
+            disabled={loading}
+            aria-label="Your message"
+          />
+
+          <button
+            type="submit"
+            disabled={loading || !message.trim()}
+          >
+            {loading ? "..." : "➤"}
+          </button>
+        </form>
+
+        <p className="chat-footer">
+          Your AI learning companion · PADDIPS BOT
+        </p>
       </div>
     </div>
   );
 }
 
 export default Chat;
+```
