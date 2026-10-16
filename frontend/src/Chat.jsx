@@ -1,4 +1,4 @@
-```jsx
+
 import { useState, useEffect, useRef } from "react";
 
 const API_URL = (
@@ -212,4 +212,4 @@ function Chat() {
 }
 
 export default Chat;
-```
+
